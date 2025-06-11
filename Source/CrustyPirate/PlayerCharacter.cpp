@@ -56,6 +56,7 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 	{
 		FVector Direction = FVector(1.0f, 0.0f, 0.0f);
 		AddMovementInput(Direction, MoveActionValue);
+		UpdateDirection(MoveActionValue);
 	}
 }
 void APlayerCharacter::JumpStarted(const FInputActionValue& Value)
@@ -72,4 +73,25 @@ void APlayerCharacter::JumpEnded(const FInputActionValue& Value)
 void APlayerCharacter::Attack(const FInputActionValue& Value)
 {
 
+}
+
+void APlayerCharacter::UpdateDirection(float MoveDirection)
+{
+	FRotator CurrentRotation = Controller->GetControlRotation(); // Looks at current rotation of player
+	if (MoveDirection < 0.0f) //  If 'a' is pressed, player moving towards left, this if is called since a = -1.
+	{
+		if (CurrentRotation.Yaw != 180.0f) // Checks to see if player is already looking left
+		{
+			Controller->SetControlRotation(FRotator(CurrentRotation.Pitch, 180.0f, CurrentRotation.Roll));
+			// Changes the rotation of the flipbook to the left.
+		}
+	}
+	else if (MoveDirection > 0.0f) // If 'd' is pressed, player moving towards right,, this else if is called since d = 1.
+	{
+		if (CurrentRotation.Yaw != 0.0f) // Checks to see if player is already looking right
+		{
+			Controller->SetControlRotation(FRotator(CurrentRotation.Pitch, 0.0f, CurrentRotation.Roll));
+			// Changes the rotation of the flipbook to the right.
+		}
+	}
 }
