@@ -1,5 +1,7 @@
 #include "PlayerCharacter.h"
 
+#include "Enemy.h"
+
 APlayerCharacter::APlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -9,6 +11,9 @@ APlayerCharacter::APlayerCharacter()
 
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	Camera->SetupAttachment(SpringArm, USpringArmComponent::SocketName); 
+
+	AttackCollisionBox = CreateDefaultSubobject<UBoxComponent>(TEXT("AttackCollisionBox"));
+	AttackCollisionBox->SetupAttachment(RootComponent);
 }
 
 void APlayerCharacter::BeginPlay()
@@ -27,6 +32,9 @@ void APlayerCharacter::BeginPlay()
 	}
 
 	OnAttackOverrideEndDelegate.BindUObject(this, &APlayerCharacter::OnAttackOverrideAnimEnd);
+
+	AttackCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::AttackBoxOverlapBegin); // When there's an overlap with the collision box, the 'AttackBoxOverlapBegin' function will be called.
+	EnableAttackCollisionBox(false); // Before we start the game, we make sure the collision box is disabled.
 }
 void APlayerCharacter::Tick(float DeltaTime)
 {
@@ -103,6 +111,8 @@ void APlayerCharacter::Attack(const FInputActionValue& Value)
 		CanAttack = false;
 		CanMove = false; // When we attack, we set 'CanMove' and 'CanAttack' to false so player can't move nor attack while we're in the attack animation.
 	
+		//EnableAttackCollisionBox(true); // Enables the collision box
+
 		GetAnimInstance()->PlayAnimationOverride(AttackAnimSequence, FName("DefaultSlot"), 1.0f, 0.0f,
 			OnAttackOverrideEndDelegate); // Play's the 'AttackAnimSequence' in the Override slot, and when the animation is over, it call's the 'OnAttackOverrideAnimEnd' function.
 	}
@@ -112,4 +122,34 @@ void APlayerCharacter::OnAttackOverrideAnimEnd(bool Completed)
 { 
 	CanAttack = true; // Player can move and attack again after the attack animation is finished.
 	CanMove = true;
+
+	//EnableAttackCollisionBox(false);
+}
+
+void APlayerCharacter::AttackBoxOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	AEnemy* Enemy = Cast<AEnemy>(OtherActor);
+
+	if (Enemy)
+	{
+		// Enemy->TakeDamage
+
+	}
+}
+
+void APlayerCharacter::EnableAttackCollisionBox(bool Enabled)
+{
+	if (Enabled)
+	{
+		AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		AttackCollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn,
+			ECollisionResponse::ECR_Overlap); // Enables collision.
+	}
+	else
+	{
+		AttackCollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		AttackCollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn,
+			ECollisionResponse::ECR_Ignore); // Disables collision.
+	}
 }

@@ -13,6 +13,7 @@
 #include "Components/InputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/Controller.h"
+#include "Components/BoxComponent.h"
 
 #include "PaperZDAnimInstance.h" // Allows us to get the animation instance and make the call to play the override animation.
 
@@ -29,6 +30,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UCameraComponent* Camera;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UBoxComponent* AttackCollisionBox;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UInputMappingContext* InputMappingContext;
@@ -63,6 +67,13 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	UFUNCTION()
+	void AttackBoxOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION(BlueprintCallable)
+	void EnableAttackCollisionBox(bool Enabled);
 
 	void Move(const FInputActionValue& Value);
 	void JumpStarted(const FInputActionValue& Value);
