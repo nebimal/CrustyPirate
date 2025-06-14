@@ -13,7 +13,9 @@
 #include "Components/InputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/Controller.h"
+
 #include "Components/BoxComponent.h"
+#include "Engine/TimerHandle.h"
 
 #include "PaperZDAnimInstance.h" // Allows us to get the animation instance and make the call to play the override animation.
 
@@ -53,20 +55,27 @@ public:
 	bool IsAlive = true;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool IsStunned = false;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool CanMove = true;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool CanAttack = true;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int HitPoints = 100;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int AttackDamage = 25;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float AttackStunDuration = 0.3f;
+	float AttackStunDuration = 0.8f;
 
 	FZDOnAnimationOverrideEndSignature OnAttackOverrideEndDelegate;
 
-
+	FTimerHandle StunTimer;
+	
 	APlayerCharacter();
 
 	virtual void BeginPlay() override;
@@ -89,5 +98,10 @@ public:
 	void UpdateDirection(float MoveDirection);
 
 	void OnAttackOverrideAnimEnd(bool Completed);
-	
+
+	void TakeDamage(int DamageAmount, float StunDuration);
+	void UpdateHP(int NewHP);
+
+	void Stun(float Duration);
+	void OnStunTimerTimeout();
 };

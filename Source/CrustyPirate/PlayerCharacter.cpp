@@ -62,7 +62,7 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 	// 1 if 'd' is pressed
 	// -1 if 'a' is pressed.
 
-	if (IsAlive && CanMove)
+	if (IsAlive && CanMove && !IsStunned)
 	{
 		FVector Direction = FVector(1.0f, 0.0f, 0.0f);
 		AddMovementInput(Direction, MoveActionValue);
@@ -93,7 +93,7 @@ void APlayerCharacter::UpdateDirection(float MoveDirection)
 
 void APlayerCharacter::JumpStarted(const FInputActionValue& Value)
 {
-	if (IsAlive && CanMove)
+	if (IsAlive && CanMove && !IsStunned)
 	{
 		Jump();
 	}
@@ -106,7 +106,7 @@ void APlayerCharacter::JumpEnded(const FInputActionValue& Value)
 
 void APlayerCharacter::Attack(const FInputActionValue& Value)
 {
-	if (IsAlive && CanAttack)
+	if (IsAlive && CanAttack && !IsStunned)
 	{
 		CanAttack = false;
 		CanMove = false; // When we attack, we set 'CanMove' and 'CanAttack' to false so player can't move nor attack while we're in the attack animation.
@@ -151,4 +151,59 @@ void APlayerCharacter::EnableAttackCollisionBox(bool Enabled)
 		AttackCollisionBox->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn,
 			ECollisionResponse::ECR_Ignore); // Disables collision.
 	}
+}
+
+void APlayerCharacter::TakeDamage(int DamageAmount, float StunDuration)
+{
+	if (!IsAlive)
+	{
+		return;
+	}
+
+	Stun(StunDuration);
+	UpdateHP(HitPoints - DamageAmount);
+
+	if (HitPoints <= 0)
+	{
+		// Player is dead
+		UpdateHP(0);
+
+		IsAlive = false;
+		CanMove = false;
+		CanAttack = false;
+
+		GetAnimInstance()->JumpToNode(FName("JumpDie"), FName("CaptainStateMachine"));
+		EnableAttackCollisionBox(false);
+	}
+	else
+	{
+		// Player is alive
+		GetAnimInstance()->JumpToNode(FName("JumpTakeHit"), FName("CaptainStateMachine"));
+	}
+}
+
+void APlayerCharacter::UpdateHP(int NewHP)
+{
+	HitPoints = NewHP;
+}
+
+void APlayerCharacter::Stun(float Duration)
+{
+	IsStunned = true;
+
+	bool IsTimerAlreadyActive = GetWorldTimerManager().IsTimerActive(StunTimer);
+	if (IsTimerAlreadyActive) // If true, enemy is already stun so we will stun it again from the beginning.
+	{
+		GetWorldTimerManager().ClearTimer(StunTimer);
+	}
+
+	GetWorldTimerManager().SetTimer(StunTimer, this, &APlayerCharacter::OnStunTimerTimeout, 1.0f, false, Duration);
+
+	GetAnimInstance()->StopAllAnimationOverrides(); // To stop the enemy while the enemy is attacking.
+	EnableAttackCollisionBox(false);
+}
+
+void APlayerCharacter::OnStunTimerTimeout()
+{
+	IsStunned = false;
 }
