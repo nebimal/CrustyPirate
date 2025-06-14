@@ -14,6 +14,8 @@
 #include "InputActionValue.h"
 #include "GameFramework/Controller.h"
 
+#include "PaperZDAnimInstance.h" // Allows us to get the animation instance and make the call to play the override animation.
+
 #include "PlayerCharacter.generated.h"
 
 UCLASS()
@@ -40,11 +42,19 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UInputAction* AttackAction;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPaperZDAnimSequence* AttackAnimSequence; // We need this so we can know what animation sequence we want to play.
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsAlive = true;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool CanMove = true;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool CanAttack = true;
+
+	FZDOnAnimationOverrideEndSignature OnAttackOverrideEndDelegate;
 
 
 	APlayerCharacter();
@@ -60,5 +70,7 @@ public:
 	void Attack(const FInputActionValue& Value);
 
 	void UpdateDirection(float MoveDirection);
+
+	void OnAttackOverrideAnimEnd(bool Completed);
 	
 };

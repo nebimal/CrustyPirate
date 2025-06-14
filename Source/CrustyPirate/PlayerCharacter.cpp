@@ -25,6 +25,8 @@ void APlayerCharacter::BeginPlay()
 			Subsystem->AddMappingContext(InputMappingContext, 0);
 		}
 	}
+
+	OnAttackOverrideEndDelegate.BindUObject(this, &APlayerCharacter::OnAttackOverrideAnimEnd);
 }
 void APlayerCharacter::Tick(float DeltaTime)
 {
@@ -59,21 +61,6 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 		UpdateDirection(MoveActionValue);
 	}
 }
-void APlayerCharacter::JumpStarted(const FInputActionValue& Value)
-{
-	if (IsAlive && CanMove)
-	{
-		Jump();
-	}
-}
-void APlayerCharacter::JumpEnded(const FInputActionValue& Value)
-{
-	StopJumping();
-}
-void APlayerCharacter::Attack(const FInputActionValue& Value)
-{
-
-}
 
 void APlayerCharacter::UpdateDirection(float MoveDirection)
 {
@@ -94,4 +81,35 @@ void APlayerCharacter::UpdateDirection(float MoveDirection)
 			// Changes the rotation of the flipbook to the right.
 		}
 	}
+}
+
+void APlayerCharacter::JumpStarted(const FInputActionValue& Value)
+{
+	if (IsAlive && CanMove)
+	{
+		Jump();
+	}
+}
+
+void APlayerCharacter::JumpEnded(const FInputActionValue& Value)
+{
+	StopJumping();
+}
+
+void APlayerCharacter::Attack(const FInputActionValue& Value)
+{
+	if (IsAlive && CanAttack)
+	{
+		CanAttack = false;
+		CanMove = false; // When we attack, we set 'CanMove' and 'CanAttack' to false so player can't move nor attack while we're in the attack animation.
+	
+		GetAnimInstance()->PlayAnimationOverride(AttackAnimSequence, FName("DefaultSlot"), 1.0f, 0.0f,
+			OnAttackOverrideEndDelegate); // Play's the 'AttackAnimSequence' in the Override slot, and when the animation is over, it call's the 'OnAttackOverrideAnimEnd' function.
+	}
+}
+
+void APlayerCharacter::OnAttackOverrideAnimEnd(bool Completed)
+{ 
+	CanAttack = true; // Player can move and attack again after the attack animation is finished.
+	CanMove = true;
 }
