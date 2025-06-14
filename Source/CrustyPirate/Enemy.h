@@ -4,6 +4,9 @@
 #include "PaperZDCharacter.h"
 
 #include "Components/SphereComponent.h"
+#include "Components/TextRenderComponent.h"
+
+#include "PaperZDAnimInstance.h"
 
 #include "PlayerCharacter.h"
 
@@ -20,11 +23,16 @@ public:
 	USphereComponent* PlayerDetectorSphere;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UTextRenderComponent* HPText;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	APlayerCharacter* FollowTarget;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float StopDistanceToTarget = 70.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int HitPoints = 100;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool IsAlive = true;
@@ -49,4 +57,8 @@ public:
 	bool ShouldMoveToTarget();
 
 	void UpdateDirection(float MoveDirection);
+
+	void UpdateHP(int NewHP);
+
+	void TakeDamage(int DamageAmount, float StunDuration);
 };

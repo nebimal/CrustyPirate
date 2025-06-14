@@ -133,8 +133,7 @@ void APlayerCharacter::AttackBoxOverlapBegin(UPrimitiveComponent* OverlappedComp
 
 	if (Enemy)
 	{
-		// Enemy->TakeDamage
-
+		Enemy->TakeDamage(AttackDamage, AttackStunDuration);
 	}
 }
 

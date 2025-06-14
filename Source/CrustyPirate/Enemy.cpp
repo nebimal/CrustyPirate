@@ -7,6 +7,9 @@ AEnemy::AEnemy()
 	PlayerDetectorSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PlayerDetectorSphere"));
 	PlayerDetectorSphere->SetupAttachment(RootComponent);
 
+	HPText = CreateDefaultSubobject<UTextRenderComponent>(TEXT("HPText"));
+	HPText->SetupAttachment(RootComponent);
+
 }
 
 void AEnemy::BeginPlay()
@@ -16,6 +19,7 @@ void AEnemy::BeginPlay()
 	PlayerDetectorSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnemy::DetectorOverlapBegin);
 	PlayerDetectorSphere->OnComponentEndOverlap.AddDynamic(this, &AEnemy::DetectorOverlapEnd);
 
+	UpdateHP(HitPoints);
 }
 
 void AEnemy::Tick(float DeltaTime)
@@ -95,5 +99,39 @@ void AEnemy::DetectorOverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor
 	if (Player)
 	{
 		FollowTarget = NULL; // Player left the sphere so we're setting FollowTarget to NULL.
+	}
+}
+
+void AEnemy::UpdateHP(int NewHP)
+{
+	HitPoints = NewHP;
+
+	FString Str = FString::Printf(TEXT("HP: %d"), HitPoints);
+	HPText->SetText(FText::FromString(Str)); // We need to cast from string to FText since SetText expects a FText class.
+}
+
+void AEnemy::TakeDamage(int DamageAmount, float StunDuration)
+{
+	if (!IsAlive)
+	{
+		return;
+	}
+	
+	UpdateHP(HitPoints - DamageAmount);
+
+	if (HitPoints <= 0)
+	{
+		IsAlive = false;
+		UpdateHP(0);
+		HPText->SetHiddenInGame(true); // Hides the HP Text
+
+		IsAlive = false;
+		CanMove = false;
+
+		GetAnimInstance()->JumpToNode(FName("JumpDie"), FName("CrabbyStateMachine"));
+	}
+	else
+	{
+		GetAnimInstance()->JumpToNode(FName("JumpTakeHit"), FName("CrabbyStateMachine"));
 	}
 }
