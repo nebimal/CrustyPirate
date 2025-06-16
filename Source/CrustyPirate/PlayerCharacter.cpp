@@ -2,6 +2,8 @@
 
 #include "Enemy.h"
 
+#include "Kismet/GameplayStatics.h"
+
 APlayerCharacter::APlayerCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -35,6 +37,26 @@ void APlayerCharacter::BeginPlay()
 
 	AttackCollisionBox->OnComponentBeginOverlap.AddDynamic(this, &APlayerCharacter::AttackBoxOverlapBegin); // When there's an overlap with the collision box, the 'AttackBoxOverlapBegin' function will be called.
 	EnableAttackCollisionBox(false); // Before we start the game, we make sure the collision box is disabled.
+
+	MyGameInstance = Cast<UCrustyPirateGameInstance>(GetGameInstance());
+	if (MyGameInstance)
+	{
+		HitPoints = MyGameInstance->PlayerHP; // Uses the HP that the CrustyPirateGameInstance has.
+	}										  
+
+
+	if (PlayerHUDClass)
+	{
+		PlayerHUDWidget = CreateWidget<UPlayerHUD>(UGameplayStatics::GetPlayerController(GetWorld(), 0), PlayerHUDClass);
+		if (PlayerHUDWidget)
+		{
+			PlayerHUDWidget->AddToPlayerScreen(); // Adds this to the game
+
+			PlayerHUDWidget->SetHP(HitPoints);
+			PlayerHUDWidget->SetDiamonds(50); // Implement diamonds and levels.
+			PlayerHUDWidget->SetLevel(1);
+		}
+	}
 }
 void APlayerCharacter::Tick(float DeltaTime)
 {
@@ -185,6 +207,8 @@ void APlayerCharacter::TakeDamage(int DamageAmount, float StunDuration)
 void APlayerCharacter::UpdateHP(int NewHP)
 {
 	HitPoints = NewHP;
+	MyGameInstance->SetPlayerHP(HitPoints); // We need this because if we switch levels, the gamemode will end, restarting the scores, but the GameInstance only ends when the game is finished so we store the values there.
+	PlayerHUDWidget->SetHP(HitPoints);      // Changes the player HP on the HUD.
 }
 
 void APlayerCharacter::Stun(float Duration)
@@ -206,4 +230,33 @@ void APlayerCharacter::Stun(float Duration)
 void APlayerCharacter::OnStunTimerTimeout()
 {
 	IsStunned = false;
+}
+
+
+void APlayerCharacter::CollectItem(CollectableType ItemType)
+{
+	UGameplayStatics::PlaySound2D(GetWorld(), ItemPickupSound); // Plays the sound
+
+	switch (ItemType) // We're using the enum in CollectableItem to see which item was pickedup/Overlapped with.
+	{
+		case CollectableType::HealthPotion:
+		{
+
+		}break;
+
+		case CollectableType::Diamond:
+		{
+
+		}break;
+
+		case CollectableType::DoubleJumpUpgrade:
+		{
+
+		}break;
+
+		default: 
+		{ // Empty
+		}break;
+
+	}
 }

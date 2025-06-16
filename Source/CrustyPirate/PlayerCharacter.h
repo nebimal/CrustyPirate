@@ -16,8 +16,13 @@
 
 #include "Components/BoxComponent.h"
 #include "Engine/TimerHandle.h"
+#include "Sound/SoundBase.h" // For when we pick up an item, it plays a sound.
 
 #include "PaperZDAnimInstance.h" // Allows us to get the animation instance and make the call to play the override animation.
+
+#include "PlayerHUD.h"
+#include "CrustyPirateGameInstance.h"
+#include "CollectableItem.h"
 
 #include "PlayerCharacter.generated.h"
 
@@ -50,6 +55,18 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UPaperZDAnimSequence* AttackAnimSequence; // We need this so we can know what animation sequence we want to play.
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UPlayerHUD> PlayerHUDClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPlayerHUD* PlayerHUDWidget;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UCrustyPirateGameInstance* MyGameInstance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USoundBase* ItemPickupSound;			  // Use this sound whenever we pick up an item.
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsAlive = true;
@@ -104,4 +121,6 @@ public:
 
 	void Stun(float Duration);
 	void OnStunTimerTimeout();
+
+	void CollectItem(CollectableType ItemType);
 };
