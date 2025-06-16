@@ -3,6 +3,7 @@
 #include "Enemy.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/CharacterMovementComponent.h" // If player is in the air, we can make him fall immediately, for when hes jumping and he hits the collision on the door component.
 
 APlayerCharacter::APlayerCharacter()
 {
@@ -42,6 +43,11 @@ void APlayerCharacter::BeginPlay()
 	if (MyGameInstance)
 	{
 		HitPoints = MyGameInstance->PlayerHP; // Uses the HP that the CrustyPirateGameInstance has.
+
+		if (MyGameInstance->IsDoubleJumpUnlocked)
+		{
+			UnlockDoubleJump();
+		}
 	}										  
 
 
@@ -52,9 +58,9 @@ void APlayerCharacter::BeginPlay()
 		{
 			PlayerHUDWidget->AddToPlayerScreen(); // Adds this to the game
 
-			PlayerHUDWidget->SetHP(HitPoints);
-			PlayerHUDWidget->SetDiamonds(50); // Implement diamonds and levels.
-			PlayerHUDWidget->SetLevel(1);
+			PlayerHUDWidget->SetHP(HitPoints); // Sets HP in Player HUD
+			PlayerHUDWidget->SetDiamonds(MyGameInstance->CollectedDiamondCount); // Set Diamonds in Player HUD
+			PlayerHUDWidget->SetLevel(MyGameInstance->CurrentLevelIndex); // Set the Current Level in Player HUD.
 		}
 	}
 }
@@ -142,10 +148,12 @@ void APlayerCharacter::Attack(const FInputActionValue& Value)
 
 void APlayerCharacter::OnAttackOverrideAnimEnd(bool Completed)
 { 
-	CanAttack = true; // Player can move and attack again after the attack animation is finished.
-	CanMove = true;
+	if (IsActive && IsAlive)
+	{
+		CanAttack = true; // Player can move and attack again after the attack animation is finished.
+		CanMove = true;
+	}
 
-	//EnableAttackCollisionBox(false);
 }
 
 void APlayerCharacter::AttackBoxOverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -181,13 +189,16 @@ void APlayerCharacter::TakeDamage(int DamageAmount, float StunDuration)
 	{
 		return;
 	}
+	if (!IsActive) // If the player is deactivated, from going to the door, don't take damage.
+	{
+		return;
+	}
 
 	Stun(StunDuration);
 	UpdateHP(HitPoints - DamageAmount);
 
 	if (HitPoints <= 0)
 	{
-		// Player is dead
 		UpdateHP(0);
 
 		IsAlive = false;
@@ -196,6 +207,9 @@ void APlayerCharacter::TakeDamage(int DamageAmount, float StunDuration)
 
 		GetAnimInstance()->JumpToNode(FName("JumpDie"), FName("CaptainStateMachine"));
 		EnableAttackCollisionBox(false);
+
+		float RestartDelay = 3.0f;
+		GetWorldTimerManager().SetTimer(RestartTimer, this, &APlayerCharacter::OnRestartTimerTimeout, 1.0f, false, RestartDelay);
 	}
 	else
 	{
@@ -241,22 +255,50 @@ void APlayerCharacter::CollectItem(CollectableType ItemType)
 	{
 		case CollectableType::HealthPotion:
 		{
-
+			int HealAmount = 25;
+			UpdateHP(HitPoints + HealAmount);
 		}break;
 
 		case CollectableType::Diamond:
 		{
-
+			MyGameInstance->AddDiamond(1);
+			PlayerHUDWidget->SetDiamonds(MyGameInstance->CollectedDiamondCount);
 		}break;
 
 		case CollectableType::DoubleJumpUpgrade:
 		{
-
+			if (!MyGameInstance->IsDoubleJumpUnlocked)
+			{
+				MyGameInstance->IsDoubleJumpUnlocked = true;
+				UnlockDoubleJump();
+			}
 		}break;
 
 		default: 
 		{ // Empty
 		}break;
 
+	}
+}
+
+void APlayerCharacter::UnlockDoubleJump()
+{
+	JumpMaxCount = 2; // Let's you jump twice, default value is 1.
+}
+
+void APlayerCharacter::OnRestartTimerTimeout()
+{
+	MyGameInstance->RestartGame();
+}
+
+void APlayerCharacter::Deactivate()
+{
+	if (IsActive)
+	{
+		IsActive = false;
+		CanAttack = false;
+		CanMove = false;
+
+		GetCharacterMovement()->StopMovementImmediately(); // Stops the player
 	}
 }

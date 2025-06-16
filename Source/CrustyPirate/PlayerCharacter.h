@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -72,6 +70,9 @@ public:
 	bool IsAlive = true;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	bool IsActive = true;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	bool IsStunned = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -92,6 +93,7 @@ public:
 	FZDOnAnimationOverrideEndSignature OnAttackOverrideEndDelegate;
 
 	FTimerHandle StunTimer;
+	FTimerHandle RestartTimer;
 	
 	APlayerCharacter();
 
@@ -123,4 +125,9 @@ public:
 	void OnStunTimerTimeout();
 
 	void CollectItem(CollectableType ItemType);
+	void UnlockDoubleJump();
+
+	void OnRestartTimerTimeout();
+
+	void Deactivate();
 };
