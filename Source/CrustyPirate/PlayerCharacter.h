@@ -128,6 +128,7 @@ public:
 	void UnlockDoubleJump();
 
 	void OnRestartTimerTimeout();
-
+	
+	UFUNCTION(BlueprintCallable)
 	void Deactivate();
 };
